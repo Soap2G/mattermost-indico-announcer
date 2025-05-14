@@ -9,8 +9,9 @@ scheduler = BackgroundScheduler()
 scheduler.start()
 
 MATTERMOST_WEBHOOK = os.getenv("MATTERMOST_WEBHOOK")
-CATEGORY_ID = os.getenv("INDICO_CATEGORY_ID")  # e.g. "425" for CERN-Related Clubs, Associations and Forums 
-KEYWORDS = os.getenv("KEYWORDS", "").split(",")  # Comma-separated
+CATEGORY_ID = os.getenv("INDICO_CATEGORY_ID")
+KEYWORDS = os.getenv("KEYWORDS", "").split(",")
+TIME_BEFORE_MINUTES = int(os.getenv("TIME_BEFORE_MINUTES", "15"))
 
 seen_events = {}
 
@@ -25,7 +26,7 @@ def should_notify(event):
     title = event["title"].lower()
     description = event.get("description", "").lower()
 
-    if KEYWORDS and not any(k.lower() in title or k.lower() in description for k in KEYWORDS):
+    if KEYWORDS and not any(k.strip().lower() in title or k.strip().lower() in description for k in KEYWORDS):
         return False
 
     eid = str(event["id"])
@@ -35,7 +36,7 @@ def should_notify(event):
         return False
 
     now = datetime.utcnow()
-    if now + timedelta(minutes=15) >= start_time:
+    if now + timedelta(minutes=TIME_BEFORE_MINUTES) >= start_time:
         return True
     return False
 
@@ -45,7 +46,7 @@ def send_notification(event):
     url = f"https://indico.cern.ch/event/{eid}/"
     start = event["startDate"]["date"]
 
-    message = f"🔔 *Upcoming Event in 15 minutes!*\n**{title}**\n🕒 {start} UTC\n🔗 [Event Link]({url})"
+    message = f"🔔 *Upcoming Event in {TIME_BEFORE_MINUTES} minutes!*\n**{title}**\n🕒 {start} UTC\n🔗 [Event Link]({url})"
     requests.post(MATTERMOST_WEBHOOK, json={"text": message})
     seen_events[eid] = True
 
@@ -58,7 +59,6 @@ def poll():
     except Exception as e:
         print("Error polling events:", e)
 
-# Start polling every 1 minute
 scheduler.add_job(poll, "interval", minutes=1)
 
 @app.route("/health")
@@ -70,7 +70,7 @@ def config():
     return jsonify({
         "category_id": CATEGORY_ID,
         "keywords": KEYWORDS,
-        "webhook": MATTERMOST_WEBHOOK
+        "minutes_before": TIME_BEFORE_MINUTES,
     })
 
 if __name__ == "__main__":

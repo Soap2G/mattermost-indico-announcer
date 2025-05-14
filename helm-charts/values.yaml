@@ -1,0 +1,18 @@
+replicaCount: 1
+
+image:
+  repository: registry.gitlab.com/your/project/indico-monitor
+  tag: latest
+  pullPolicy: IfNotPresent
+
+env:
+  INDICO_CATEGORY_ID: "93"
+  KEYWORDS: "ai,open data"
+  TIME_BEFORE_MINUTES: "15"
+
+secret:
+  MATTERMOST_WEBHOOK: "https://mattermost.example.com/hooks/your-id"
+
+service:
+  type: ClusterIP
+  port: 8080

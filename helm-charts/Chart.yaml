@@ -1,0 +1,5 @@
+apiVersion: v2
+name: indico-monitor
+description: Indico category monitor to Mattermost
+type: application
+version: 0.1.0

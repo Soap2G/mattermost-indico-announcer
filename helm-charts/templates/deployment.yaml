@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: indico-monitor
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: indico-monitor
+  template:
+    metadata:
+      labels:
+        app: indico-monitor
+    spec:
+      containers:
+        - name: indico-monitor
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: INDICO_CATEGORY_ID
+              value: "{{ .Values.env.INDICO_CATEGORY_ID }}"
+            - name: KEYWORDS
+              value: "{{ .Values.env.KEYWORDS }}"
+            - name: TIME_BEFORE_MINUTES
+              value: "{{ .Values.env.TIME_BEFORE_MINUTES }}"
+            - name: MATTERMOST_WEBHOOK
+              valueFrom:
+                secretKeyRef:
+                  name: indico-monitor-secret
+                  key: MATTERMOST_WEBHOOK
